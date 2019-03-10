@@ -35,37 +35,19 @@ class base:
         return n
 
     def state_universe(self):
-        list0 = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-        per0 = permutations(list0, 9)
-        res0 = list(set(per0))
-        list1 = [0, 0, 0, 0, 0, 0, 0, 0, 1]
-        per1 = permutations(list1, 9)
-        res1 = list(set(per1))
-        list2 = [0, 0, 0, 0, 0, 0, 0, -1, 1]
-        per2 = permutations(list2, 9)
-        res2 = list(set(per2))
-        list3 = [0, 0, 0, 0, 0, 0, 1, -1, 1]
-        per3 = permutations(list3, 9)
-        res3 = list(set(per3))
-        list4 = [0, 0, 0, 0, 0, -1, 1, -1, 1]
-        per4 = permutations(list4, 9)
-        res4 = list(set(per4))
-        list5 = [0, 0, 0, 0, 1, -1, 1, -1, 1]
-        per5 = permutations(list5, 9)
-        res5 = list(set(per5))
-        list6 = [0, 0, 0, -1, 1, -1, 1, -1, 1]
-        per6 = permutations(list6, 9)
-        res6 = list(set(per6))
-        list7 = [0, 0, 1, -1, 1, -1, 1, -1, 1]
-        per7 = permutations(list7, 9)
-        res7 = list(set(per7))
-        list8 = [0, -1, 1, -1, 1, -1, 1, -1, 1]
-        per8 = permutations(list8, 9)
-        res8 = list(set(per8))
-        list9 = [1, -1, 1, -1, 1, -1, 1, -1, 1]
-        per9 = permutations(list9, 9)
-        res9 = list(set(per9))
-        self.state_env = res0 + res1 + res2 + res3 + res4 + res4 + res5 + res6 + res7 + res8 + res9
+        list_1 = []
+        for i in range(10):
+            aa = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+            bb = (i+1)//2
+            cc = i//2
+            for k in range(bb):
+                aa.append(1)
+                aa.pop(0)
+            for j in range(cc):
+                aa.append(-1)
+                aa.pop(0)
+        list_1 += list(set(permutations(aa, 9)))
+        self.state_env = list_1
         return len(self.state_env)
 
     def state_space(self):
