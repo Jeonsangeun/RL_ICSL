@@ -1,4 +1,4 @@
-import tmp as main
+import TicTacTok_env as main
 import numpy as np
 import random as rd
 import matplotlib.pyplot as plt
