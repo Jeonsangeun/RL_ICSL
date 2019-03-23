@@ -1,16 +1,21 @@
 import tensorflow as tf
 import numpy as np
-import ex_env as Cache
-
+import Cache_env as Cache
+tf.reset_default_graph()
 env = Cache.cache_replacement()
-
+save_file = './model.ckpt'
 class DQN:
     def __init__(self, session, input_size, output_size, name="main"):
         self.session = session
         self.input_size = input_size
         self.output_size = output_size
         self.net_name = name
-        self.Weight = []
+        self.Weight_1 = []
+        self.Weight_2 = []
+        self.Weight_3 = []
+        self.Bias_1 = []
+        self.Bias_2 = []
+        self.Bias_3 = []
 
         self._build_network()
 
@@ -36,9 +41,12 @@ class DQN:
         self._loss = tf.reduce_mean(tf.square(self._Y - self._Qpred))
         self._train = tf.train.AdamOptimizer(learning_rate=l_rate).minimize(self._loss)
 
-        self.Weight_1 = tf.matmul(W1, W2)
-        self.Weight = tf.matmul(self.Weight_1, W3)
-        self.Bias = b3
+        self.Weight_1 = W1
+        self.Weight_2 = W2
+        self.Weight_3 = W3
+        self.Bias_1 = b1
+        self.Bias_2 = b2
+        self.Bias_3 = b3
 
     def predict(self, state):
         x = np.reshape(state, [1, self.input_size])
