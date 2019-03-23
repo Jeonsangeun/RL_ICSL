@@ -23,7 +23,7 @@ class cache_replacement:
         return rate
 
     def request_file(self):
-        pp = np.random.choice((1.0, 2.0, 3.0, 4.0, 5.0), 1, p=[cache_replacement.Zipf_law(self, 1),
+        pp = np.random.choice((1.0, 3.0, 5.0, 7.0, 9.0), 1, p=[cache_replacement.Zipf_law(self, 1),
                                                                cache_replacement.Zipf_law(self, 2),
                                                                cache_replacement.Zipf_law(self, 3),
                                                                cache_replacement.Zipf_law(self, 4),
@@ -32,6 +32,7 @@ class cache_replacement:
 
     def reset(self):
         self.state = np.array([[0, 0, 0, 0], [0, 0, 0, 0]], dtype=float)
+        '''
         for i in range(2):
             for k in range(2):
                 file = cache_replacement.request_file(self)
@@ -44,6 +45,7 @@ class cache_replacement:
                         self.state[i][2 * k] = file
                         self.state[i][2 * k + 1] = file + 0.1
                         done = True
+        '''
         self.cost = 0
         self.count = 0
         file_1 = cache_replacement.request_file(self)
@@ -57,55 +59,58 @@ class cache_replacement:
         done = False
         cost = 0
         reward = 0
+        new_state = []
         self.tmp_1 = (self.state[0])[:]
         self.tmp_2 = (self.state[1])[:]
         if user == 10:
-            for i in range(2):
-                n = self.tmp_1[action]
-                self.tmp_1 = np.delete(self.tmp_1, action)
-                if file not in self.tmp_1:
-                    if file not in self.tmp_2:
-                        self.tmp_1 = np.append(self.tmp_1, file)
-                        cost += 100
-                        reward -= 50
-                    else:
-                        self.tmp_1 = np.append(self.tmp_1, file)
-                        cost += 25
-                        reward += 0
+            n = self.tmp_1[action]
+            self.tmp_1 = np.delete(self.tmp_1, action)
+            if file not in self.tmp_1:
+                if file not in self.tmp_2:
+                    self.tmp_1 = np.append(self.tmp_1, file)
+                    cost += 100
+                    reward -= 100
                 else:
-                    self.tmp_1 = np.append(self.tmp_1, n)
-                    cost += 5
-                    reward += 50
-                file += 0.1
+                    self.tmp_1 = np.append(self.tmp_1, file)
+                    cost += 25
+                    reward += 0
+            else:
+                self.tmp_1 = np.append(self.tmp_1, n)
+                cost += 5
+                reward += 100
+            self.count += 1
             self.state[0] = self.tmp_1[:]
         if user == -10:
-            for i in range(2):
-                n = self.tmp_2[action]
-                self.tmp_2 = np.delete(self.tmp_2, action)
-                if file not in self.tmp_2:
-                    if file not in self.tmp_1:
-                        self.tmp_2 = np.append(self.tmp_2, file)
-                        cost += 100
-                        reward -= 50
-                    else:
-                        self.tmp_2 = np.append(self.tmp_2, file)
-                        cost += 25
-                        reward += 0
+            n = self.tmp_2[action]
+            self.tmp_2 = np.delete(self.tmp_2, action)
+            if file not in self.tmp_2:
+                if file not in self.tmp_1:
+                    self.tmp_2 = np.append(self.tmp_2, file)
+                    cost += 100
+                    reward -= 50
                 else:
-                    self.tmp_2 = np.append(self.tmp_2, n)
-                    cost += 5
-                    reward += 50
-                file += 0.1
+                    self.tmp_2 = np.append(self.tmp_2, file)
+                    cost += 25
+                    reward += 0
+            else:
+                self.tmp_2 = np.append(self.tmp_2, n)
+                cost += 5
+                reward += 50
+            self.count += 1
             self.state[1] = self.tmp_2[:]
 
-        file_1 = cache_replacement.request_file(self)
-        user = np.random.choice((10, -10), 1,  p=[0.5, 0.5])
-        new_state = cache_replacement.make(self, file_1, user)
+        if self.count % 2 == 1:
+            file += 1
+            new_state = cache_replacement.make(self, file, user)
+        if self.count % 2 == 0:
+            file = cache_replacement.request_file(self)
+            user = np.random.choice((10, -10), 1,  p=[0.5, 0.5])
+            new_state = cache_replacement.make(self, file, user)
         self.cost += cost
-        self.count += 1
-        if self.count == 1000:
+
+        if self.count == 2000:
             done = True
-        return new_state, reward, done, file_1, user
+        return new_state, reward, done, file, user
 
     def make(self, file, user):
         list = np.zeros(10)
