@@ -1,18 +1,19 @@
+
 import tensorflow as tf
 import numpy as np
 import random as rd
 import Cache_env as cache
 import Cache_DQN as DQN
 from collections import deque
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 env = cache.cache_replacement()
 
 input_size = 10
 output_size = 4
-dis = .90
+dis = .95
 request = 2000
-REPLAY_MEMORY = 5000000
+REPLAY_MEMORY = 500000
 x_layer = []
 y_layer = []
 
@@ -45,7 +46,7 @@ def get_copy_var_ops(*, dest_scope_name = "target", src_scope_name="main"):
     return op_holder
 
 def main():
-    max_episodes = 25000
+    max_episodes = 50000
     replay_buffer = deque()
     cost = 0
 
@@ -66,38 +67,7 @@ def main():
                     action = env.random_action()
                 else:
                     action = np.argmax(mainDQN.predict(state))
-                '''
-                if user == 10:
-                    tmp_state = env.state[0].copy()
-                    aa = np.where(env.state[0] == file)
-                    bb = np.max(env.state[0])
-                    if 0. in tmp_state:
-                        action = 0
-                    else:
-                        if bb == file:
-                            tmp_state[aa[0][0]] = -1000
-                            bb = np.max(tmp_state)
-                            cc = np.where(tmp_state == bb)
-                            action = cc[0][0]
-                        else:
-                            cc = np.where(tmp_state == bb)
-                            action = cc[0][0]
-                if user == -10:
-                    tmp_state = env.state[1].copy()
-                    aa = np.where(env.state[1] == file)
-                    bb = np.max(env.state[1])
-                    if 0. in tmp_state:
-                        action = 0
-                    else:
-                        if bb == file:
-                            tmp_state[aa[0][0]] = -1000
-                            bb = np.max(tmp_state)
-                            cc = np.where(tmp_state == bb)
-                            action = cc[0][0]
-                        else:
-                            cc = np.where(tmp_state == bb)
-                            action = cc[0][0]
-                '''
+
                 #print(env.state)
                 #print(action)
                 #print(file)
@@ -143,9 +113,8 @@ def main():
     np.save("X_", x_layer)
     np.save("Y_", y_layer)
 
-    plt.plot(x_layer, y_layer)
-    plt.show()
+    #plt.plot(x_layer, y_layer)
+    #plt.show()
 
 if __name__ =="__main__":
     main()
-
