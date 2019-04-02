@@ -9,7 +9,7 @@ class cache_replacement:
         self.Memory = 4
         self.L_file = 5
         self.alpha = 1.0
-        self.state = np.array([[0, 0, 0, 0], [0, 0, 0, 0]], dtype=float)
+        self.state = np.array([[-1, -1, -1, -1], [-1, -1, -1, -1]], dtype=float)
         self.cost = 0
         self.count = 0
 
@@ -23,7 +23,7 @@ class cache_replacement:
         return rate
 
     def request_file(self):
-        pp = np.random.choice((1.0, 3.0, 5.0, 7.0, 9.0), 1, p=[cache_replacement.Zipf_law(self, 1),
+        pp = np.random.choice((0.0, 2.0, 4.0, 6.0, 8.0), 1, p=[cache_replacement.Zipf_law(self, 1),
                                                                cache_replacement.Zipf_law(self, 2),
                                                                cache_replacement.Zipf_law(self, 3),
                                                                cache_replacement.Zipf_law(self, 4),
@@ -31,7 +31,7 @@ class cache_replacement:
         return pp[0]
 
     def reset(self):
-        self.state = np.array([[0, 0, 0, 0], [0, 0, 0, 0]], dtype=float)
+        self.state = np.array([[-1, -1, -1, -1], [-1, -1, -1, -1]], dtype=float)
         '''
         for i in range(2):
             for k in range(2):
@@ -69,7 +69,7 @@ class cache_replacement:
                 if file not in self.tmp_2:
                     self.tmp_1 = np.append(self.tmp_1, file)
                     cost += 100
-                    reward -= 100
+                    reward -= 50
                 else:
                     self.tmp_1 = np.append(self.tmp_1, file)
                     cost += 25
@@ -77,7 +77,7 @@ class cache_replacement:
             else:
                 self.tmp_1 = np.append(self.tmp_1, n)
                 cost += 5
-                reward += 100
+                reward += 50
             self.count += 1
             self.state[0] = self.tmp_1[:]
         if user == -10:
@@ -113,10 +113,21 @@ class cache_replacement:
         return new_state, reward, done, file, user
 
     def make(self, file, user):
+
         list = np.zeros(10)
         list[0] = file
-        for i in range(2):
-            for k in range(4):
-                list[(k + 1) * (i + 1)] = self.state[i][k]
+        for k in range(2):
+            for i in range(self.Memory):
+                list[k * 5 + (i + 1)] = self.state[k][i]
         list[9] = user
+
+        '''
+        list = np.zeros(12)
+        for i in range(5):
+            list[i] += (self.state[(i//5)] // 2 == i).sum()
+        for k in range(5, 10):
+            list[k] += (self.state[(k//5)] // 2 == (k-5)).sum()
+        list[10] = file
+        list[11] = user
+        '''
         return list.tolist()
