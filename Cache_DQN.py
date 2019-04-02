@@ -1,9 +1,10 @@
 import tensorflow as tf
 import numpy as np
 import Cache_env as Cache
-tf.reset_default_graph()
+
 env = Cache.cache_replacement()
-save_file = './model.ckpt'
+
+
 class DQN:
     def __init__(self, session, input_size, output_size, name="main"):
         self.session = session
@@ -21,21 +22,22 @@ class DQN:
 
     def _build_network(self, h_size=50, l_rate=0.01):
         with tf.variable_scope(self.net_name):
-            self._X = tf.placeholder(tf.float32, [None, self.input_size], name="input_x")
+            with tf.device("/gpu:0"):
+                self._X = tf.placeholder(tf.float32, [None, self.input_size], name="input_x")
 
-            W1 = tf.get_variable("W1", shape=[self.input_size, h_size],
-                                 initializer=tf.contrib.layers.xavier_initializer())
-            b1 = tf.Variable(tf.random_normal([h_size]))
-            layer1 = tf.nn.tanh(tf.matmul(self._X, W1) + b1)
-            W2 = tf.get_variable("W2", shape=[h_size, h_size],
-                                 initializer=tf.contrib.layers.xavier_initializer())
-            b2 = tf.Variable(tf.random_normal([h_size]))
-            layer2 = tf.nn.tanh(tf.matmul(layer1, W2) + b2)
-            W3 = tf.get_variable("W3", shape=[h_size, self.output_size],
-                                 initializer=tf.contrib.layers.xavier_initializer())
-            b3 = tf.Variable(tf.random_normal([self.output_size]))
+                W1 = tf.get_variable("W1", shape=[self.input_size, h_size],
+                                    initializer=tf.contrib.layers.xavier_initializer())
+                b1 = tf.Variable(tf.random_normal([h_size]))
+                layer1 = tf.nn.tanh(tf.matmul(self._X, W1) + b1)
+                W2 = tf.get_variable("W2", shape=[h_size, h_size],
+                                    initializer=tf.contrib.layers.xavier_initializer())
+                b2 = tf.Variable(tf.random_normal([h_size]))
+                layer2 = tf.nn.tanh(tf.matmul(layer1, W2) + b2)
+                W3 = tf.get_variable("W3", shape=[h_size, self.output_size],
+                                    initializer=tf.contrib.layers.xavier_initializer())
+                b3 = tf.Variable(tf.random_normal([self.output_size]))
 
-            self._Qpred = tf.matmul(layer2, W3) + b3
+                self._Qpred = tf.matmul(layer2, W3) + b3
 
         self._Y = tf.placeholder(shape=[None, self.output_size], dtype=tf.float32)
         self._loss = tf.reduce_mean(tf.square(self._Y - self._Qpred))
