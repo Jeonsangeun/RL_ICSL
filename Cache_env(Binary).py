@@ -4,40 +4,33 @@ import random as rd
 class cache_replacement:
 
     def __init__(self):
-        self.Num_file = 5
-        self.Num_packet = 2
-        self.Memory = 4
-        self.L_file = 5
+        self.Num_file = 20
+        self.Num_packet = 8
+        self.Memory = 16
+        self.F_packet = self.Num_file * self.Num_packet
         self.alpha = 1.0
-        self.state = np.zeros([2, 4]) - 1
-        self.Memo = np.zeros([22])
+        self.state = np.zeros([2, self.Memory]) - 1
+        self.Memo = np.zeros([self.F_packet + 2])
         self.cost = 0
         self.count = 0
-        self.list_A = []
-        self.list_B = []
-        self.win_reward = 150
+        self.win_reward = 125
         self.draw_reward = 25
         self.loss_reward = 5
+        self.Zip_law = []
+        self.Setting = tuple(range(0, self.Num_packet * self.Num_file, self.Num_packet))
 
-    def Zipf_law(self, k):
-        m = 0.0
-        for i in range(1, self.L_file + 1):
-            m += 1.0 / (i ** self.alpha)
-        rate = 1.0 / (k ** self.alpha) / m
-
-        return rate
+    def Zip_funtion(self):
+        m = np.sum(np.array(range(1, self.Num_file+1))**(-self.alpha))
+        self.Zip_law = (np.array(range(1, self.Num_file+1))**(-self.alpha)) / m
 
     def request_file(self):
-        pp = np.random.choice((0, 2, 4, 6, 8), 1, p=[cache_replacement.Zipf_law(self, 1),
-                                                     cache_replacement.Zipf_law(self, 2),
-                                                     cache_replacement.Zipf_law(self, 3),
-                                                     cache_replacement.Zipf_law(self, 4),
-                                                     cache_replacement.Zipf_law(self, 5)])
+        pp = np.random.choice(self.Setting, 1, p=self.Zip_law)
         return pp[0]
 
+
     def reset(self):
-        self.state = np.zeros([2, 4]) - 1
-        self.Memo = np.zeros([22])
+        self.state = np.zeros([2, self.Memory]) - 1
+        self.Memo = np.ones([self.F_packet + 2])
         '''
         for i in range(2):
             for k in range(2):
@@ -56,12 +49,29 @@ class cache_replacement:
         self.count = 0
         file_1 = cache_replacement.request_file(self)
         user = np.random.choice((1, -1), 1,  p=[0.5, 0.5])
-        self.Memo[20] = file_1
-        self.Memo[21] = user
-        return self.Memo, file_1, user
+        new = cache_replacement.flat(self, file_1, user)
+        return new, file_1, user
 
     def random_action(self):
-        return rd.randrange(10)
+        '''
+        if user == 1:
+            if -1 in self.state[0]:
+                action = -1
+            else:
+                action = rd.randrange(-1, self.F_packet + 1)
+        if user == -1:
+            if -1 in self.state[1]:
+                action = -1
+            else:
+                action = rd.randrange(-1, self.F_packet + 1)
+
+        if user == 1:
+            action = np.random.choice(self.state[0])
+        if user == -1:
+            action = np.random.choice(self.state[0])
+        '''
+        #action = rd.randrange(-1, self.F_packet + 1)
+        return rd.randrange(-1, self.F_packet + 1)
 
     def step(self, action, file, user):
         done = False
@@ -72,45 +82,39 @@ class cache_replacement:
         self.tmp_2 = (self.state[1])[:]
         if user == 1:
             action = cache_replacement.compile(self, action, user)
-            if action != []:
-                n = self.tmp_1[action[0]]
-                self.tmp_1 = np.delete(self.tmp_1, action[0])
-                if n != -1:
-                    self.Memo[int(n)] = 0
+            if action != -1:
+                n = self.tmp_1[action]
+                self.tmp_1 = np.delete(self.tmp_1, action)
                 if file not in self.tmp_1:
                     if file not in self.tmp_2:
                         self.tmp_1 = np.append(self.tmp_1, file)
-                        self.Memo[file] = 1
                         cost += 100
                         reward += self.loss_reward
                     else:
                         self.tmp_1 = np.append(self.tmp_1, file)
-                        self.Memo[file] = 1
                         cost += 25
                         reward += self.draw_reward
                 else:
                     self.tmp_1 = np.append(self.tmp_1, n)
-                    if n != -1:
-                        self.Memo[int(n)] = 1
                     cost += 5
                     reward += self.win_reward
             else:
                 if -1 in self.state[0]:
+                    aa = np.where(self.state[0] == -1)
+                    bb = aa[0].tolist()
                     if file not in self.tmp_1:
+                        self.tmp_1 = np.delete(self.tmp_1, bb[0])
                         if file not in self.tmp_2:
-                            self.tmp_1 = np.delete(self.tmp_1, 0)
                             self.tmp_1 = np.append(self.tmp_1, file)
-                            self.Memo[file] = 1
                             cost += 100
                             reward += self.loss_reward
                         else:
-                            self.tmp_1 = np.delete(self.tmp_1, 0)
                             self.tmp_1 = np.append(self.tmp_1, file)
-                            self.Memo[file] = 1
                             cost += 25
                             reward += self.draw_reward
-                    cost += 5
-                    reward += self.win_reward
+                    else:
+                        cost += 5
+                        reward += self.win_reward
                 else:
                     if file not in self.tmp_1:
                         if file not in self.tmp_2:
@@ -126,45 +130,39 @@ class cache_replacement:
             self.state[0] = self.tmp_1[:]
         if user == -1:
             action = cache_replacement.compile(self, action, user)
-            if action != []:
-                n = self.tmp_2[action[0]]
-                self.tmp_2 = np.delete(self.tmp_2, action[0])
-                if n != -1:
-                    self.Memo[int(n + 10)] = 0
+            if action != -1:
+                n = self.tmp_2[action]
+                self.tmp_2 = np.delete(self.tmp_2, action)
                 if file not in self.tmp_2:
                     if file not in self.tmp_1:
                         self.tmp_2 = np.append(self.tmp_2, file)
-                        self.Memo[file + 10] = 1
                         cost += 100
                         reward += self.loss_reward
                     else:
                         self.tmp_2 = np.append(self.tmp_2, file)
-                        self.Memo[file + 10] = 1
                         cost += 25
                         reward += self.draw_reward
                 else:
                     self.tmp_2 = np.append(self.tmp_2, n)
-                    if n != -1:
-                        self.Memo[int(n + 10)] = 1
                     cost += 5
                     reward += self.win_reward
             else:
                 if -1 in self.state[1]:
+                    aa = np.where(self.state[1] == -1)
+                    bb = aa[0].tolist()
                     if file not in self.tmp_2:
+                        self.tmp_2 = np.delete(self.tmp_2, bb[0])
                         if file not in self.tmp_1:
-                            self.tmp_2 = np.delete(self.tmp_2, 0)
                             self.tmp_2 = np.append(self.tmp_2, file)
-                            self.Memo[file+10] = 1
                             cost += 100
                             reward += self.loss_reward
                         else:
-                            self.tmp_2 = np.delete(self.tmp_2, 0)
                             self.tmp_2 = np.append(self.tmp_2, file)
-                            self.Memo[file+10] = 1
                             cost += 25
                             reward += self.draw_reward
-                    cost += 5
-                    reward += self.win_reward
+                    else:
+                        cost += 5
+                        reward += self.win_reward
                 else:
                     if file not in self.tmp_2:
                         if file not in self.tmp_1:
@@ -179,29 +177,69 @@ class cache_replacement:
             self.count += 1
             self.state[1] = self.tmp_2[:]
 
-        if self.count % 2 == 1:
+        if self.count % self.Num_packet != 0:
             file += 1
-            self.Memo[20] = file
-            self.Memo[21] = user
-            new_state = self.Memo
-        if self.count % 2 == 0:
+            new_state = cache_replacement.flat(self, file, user)
+        if self.count % self.Num_packet == 0:
             file = cache_replacement.request_file(self)
             user = np.random.choice((1, -1), 1,  p=[0.5, 0.5])
-            self.Memo[20] = file
-            self.Memo[21] = user
-            new_state = self.Memo
+            new_state = cache_replacement.flat(self, file, user)
         self.cost += cost
 
-        if self.count == 200:
+        if self.count == 800:
             done = True
         return new_state, reward, done, file, user
 
     def compile(self, action, user):
         self.move = []
+        self.choice = []
         if user == 1:
             tmp = np.where(self.state[0] == action)
             self.move = tmp[0].tolist()
         if user == -1:
             tmp = np.where(self.state[1] == action)
             self.move = tmp[0].tolist()
-        return self.move
+        if self.move == []:
+            self.move.append(-1)
+        self.choice = rd.sample(self.move, 1)
+        return self.choice[0]
+    '''
+    def flat(self, file, user):
+        self.Memo = np.zeros([2 * self.F_packet + 2])
+        for i in range(self.Memory):
+            a = self.state[0][i]
+            b = self.state[1][i]
+            if a == -1:
+                pass
+            else:
+                self.Memo[int(a)] = 1
+            if b == -1:
+                pass
+            else:
+                self.Memo[int(b + self.F_packet)] = 1
+        self.Memo[2 * self.F_packet] = file
+        self.Memo[2 * self.F_packet + 1] = user
+        return self.Memo
+    '''
+    def flat(self, file, user):
+        self.Memo = np.ones([self.F_packet + 2])
+        for i in range(self.F_packet):
+            if i in self.state[0]:
+                self.Memo[i] = 10
+                if i in self.state[1]:
+                    self.Memo[i] = 50
+            elif i in self.state[1]:
+                self.Memo[i] = -10
+
+        self.Memo[self.F_packet] = file
+        self.Memo[self.F_packet + 1] = user
+        return self.Memo
+
+    '''
+    if i in self.state[0] and i not in self.state[1]:
+        self.Memo[i] = 1
+    if i not in self.state[0] and i in self.state[1]:
+        self.Memo[i] = 2
+    if i in self.state[0] and i in self.state[1]:
+        self.Memo[i] = 3
+    '''
