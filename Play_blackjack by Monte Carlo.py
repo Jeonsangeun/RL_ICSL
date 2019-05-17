@@ -11,6 +11,7 @@ print("Black-Jack Play")
 Value = np.zeros([10, 10, 2])
 Count = np.zeros([10, 10, 2])
 max_episode = 100000
+Ace = 1
 dis = 0
 
 for episode in range(max_episode):
@@ -18,9 +19,9 @@ for episode in range(max_episode):
     start = state
     done = False
     Return = 0
-    #print(env.deck)
-    #print(state)
-    #print("<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>")
+    # print(env.deck)
+    # print(state)
+    # print("<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>")
     while not done:
         '''
         print("딜러의 패", env.Dealer)
@@ -28,7 +29,7 @@ for episode in range(max_episode):
         print("플레이어의 패", env.Player)
         print("플레이어 점수:", env.Count_Point(env.Player))
         '''
-        if env.Count_Point(env.Player) > 17:
+        if env.Count_Point(env.Player) > 20:
             action = 0
         else:
             action = 1
@@ -43,8 +44,8 @@ for episode in range(max_episode):
         print("딜러 점수:", env.Count_Point(env.Dealer))
         print("플레이어의 패", env.Player)
         print("플레이어 점수:", env.Count_Point(env.Player))
-        
-        
+
+
         Count[state] += 1
         Value[state] = Value[state] + (1 / Count[state]) * (reward + dis * Value[new_state] - Value[state])
         '''
@@ -55,8 +56,6 @@ for episode in range(max_episode):
 
         state = new_state
 
-
-
         #print("reward:", reward)
 
     if episode % 1000 == 0:
@@ -66,7 +65,7 @@ x = np.array([9, 0, 1, 2, 3, 4, 5, 6, 7, 8])
 y = np.array(range(10))
 xx, yy = np.meshgrid(x, y)
 
-z_1 = Value[xx, yy, env.Usable_Ace]
+z_1 = Value[xx, yy, Ace]
 
 x_1 = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 y_1 = np.array(range(12, 22, 1))
@@ -79,4 +78,5 @@ ax = Axes3D(fig)
 ax.set_title("Black_jack value-function")
 ax.plot_wireframe(xx_1, yy_1, z_1, rstride=1, cstride=1)
 plt.show()
+
 
