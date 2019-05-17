@@ -7,20 +7,23 @@ class Black:
         self.Player = []
         self.Total_count = 0
         self.state = np.array([0, 0, 0])
+        self.Usable_Ace = 0
 
     def deck_shuffle(self):
-        aa = ['A', 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10]
-        self.deck = np.array(aa * 4)
-        np.random.shuffle(self.deck)
+        if self.Usable_Ace == 1:
+            aa = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10]
+            self.deck = np.array(aa * 4)
+            np.random.shuffle(self.deck)
+        if self.Usable_Ace == 0:
+            aa = ['A', 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10]
+            self.deck = np.array(aa * 4)
+            np.random.shuffle(self.deck)
         return self.deck
 
     def state_make(self, Dealer, Player):
-        C = 0
         aa = Black.Count_Point(self, Dealer) - 2
         bb = Black.Count_Point(self, Player) - 12
-        if 'A' in Player:
-            C = 1
-        state = tuple([aa, bb, C])
+        state = tuple([aa, bb, self.Usable_Ace])
         return state
 
     def reset(self):
@@ -91,7 +94,5 @@ class Black:
         while Black.Count_Point(self, self.Dealer) < 17:
             self.Dealer.append(self.deck[self.Total_count + 4])
             self.Total_count += 1
-
-
 
 
