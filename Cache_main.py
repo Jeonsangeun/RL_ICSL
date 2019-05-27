@@ -1,20 +1,23 @@
 import tensorflow as tf
 import numpy as np
 import random as rd
-import ex_env as cache
-import ex_DQN as DQN
+import Cache_env as cache
+import Cache_DQN as DQN
 from collections import deque
 import matplotlib.pyplot as plt
+import time
+start_time = time.time()
 
 env = cache.cache_replacement()
 
-input_size = env.F_packet * 2 + 2
-output_size = env.F_packet
-dis = .999
-request = (100 * env.Num_packet)
-REPLAY_MEMORY = 500000
+input_size = env.Memory * 4 + 5
+output_size = 4 * env.Memory
+dis = .9999999
+request = 200
+REPLAY_MEMORY = 1000000
 x_layer = []
 y_layer = []
+
 
 def replay_train(mainDQN, targetDQN, train_batch):
     x_stack = np.empty(0).reshape(0, input_size)
@@ -33,7 +36,8 @@ def replay_train(mainDQN, targetDQN, train_batch):
 
     return mainDQN.update(x_stack, y_stack)
 
-def get_copy_var_ops(*, dest_scope_name = "target", src_scope_name="main"):
+
+def get_copy_var_ops(*, dest_scope_name="target", src_scope_name="main"):
     op_holder = []
 
     src_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=src_scope_name)
@@ -44,8 +48,9 @@ def get_copy_var_ops(*, dest_scope_name = "target", src_scope_name="main"):
 
     return op_holder
 
+
 def main():
-    max_episodes = 10000
+    max_episodes = 20000
     replay_buffer = deque()
     cost = 0
     env.Zip_funtion()
@@ -58,125 +63,83 @@ def main():
         copy_ops = get_copy_var_ops(dest_scope_name="target", src_scope_name="main")
         sess.run(copy_ops)
         for episode in range(max_episodes):
-            e = 1. / ((episode // 500) + 1)
-            state, file, user = env.reset()
-            #print(np.argmax(mainDQN.predict(state)))
-            for i in range(request):
-
+            e = 1. / ((episode // 1000) + 1)
+            state = env.reset()
+            file = env.file_request[0]
+            user = env.user_location
+            for i in range(request * env.Num_packet):
+                print("-------------------")
+                print("NOW:", env.BS)
+                print("file:", file)
+                print("user:", user)
+                print("state:", state)
+                '''
+                action = 0
+                aa = np.ones([4]) * 1000
+                if file in env.BS[0]:
+                    aa[0] = env.Distance(env.BS_0, user)
+                if file in env.BS[1]:
+                    aa[1] = env.Distance(env.BS_1, user)
+                if file in env.BS[2]:
+                    aa[2] = env.Distance(env.BS_2, user)
+                if file in env.BS[3]:
+                    aa[3] = env.Distance(env.BS_3, user)
+                bb = np.argmin(aa)
+                if bb == 0:
+                    action = np.argmax(env.BS[0])
+                if bb == 1:
+                    action = 4 + np.argmax(env.BS[1])
+                if bb == 2:
+                    action = 8 + np.argmax(env.BS[2])
+                if bb == 3:
+                    action = 12 + np.argmax(env.BS[3])
+                
                 if np.random.rand(1) < e:
                     action = env.random_action()
                 else:
                     action = np.argmax(mainDQN.predict(state)[0])
-                    #if episode > 1000:
-                    #    if env.count % 50 == 0:
-                    #        print(state)
-                    #        print(action)
-                    #        print(mainDQN.predict(state)[0])
                 '''
-                action = 0
-                if user == 1:
-                    tmp = env.state[0].copy()
-                    if -1 in tmp:
-                        action = env.Memory
-                    else:
-                        aa = np.max(tmp)
-                        bb = np.argmax(tmp)
-                        if aa == file:
-                            tmp[np.argmax(tmp)] = -1
-                            action = np.argmax(tmp)
-                        else:
-                            action = bb
-                if user == -1:
-                    tmp = env.state[1].copy()
-                    if -1 in tmp:
-                        action = env.Memory
-                    else:
-                        aa = np.max(tmp)
-                        bb = np.argmax(tmp)
-                        if aa == file:
-                            tmp[np.argmax(tmp)] = -1
-                            action = np.argmax(tmp)
-                        else:
-                            action = bb
-                
-                #비인기 패킷 제거
-                env.state_def()
-                print(env.state_A)
-                print(env.state_B)
-                print("packet", file)
-                print(state)
-                print("user: ", user)
-                #action = int(input("액션을 입력하시오: "))
-                print("action", action)
-                #print((state == 1).sum())
-                print("---------------------")
-                '''
+                action = int(input("액션을 입력하시오:"))
+                print("action:", action)
+
                 next_state, reward, done, file, user = env.step(action, file, user)
-                '''
-                print(reward)
-                #print(env.state)
-                env.state_def()
-                print(env.state_A)
-                print(env.state_B)
-                print(next_state)
-                print(env.cost)
-                print("-----++++++++++++----------------")
-                '''
+                print("reward:", reward)
+
                 replay_buffer.append((state, action, reward, next_state, done))
                 if len(replay_buffer) > REPLAY_MEMORY:
                     replay_buffer.popleft()
 
                 state = next_state
 
-            #print("--------")
-
             cost += env.cost
-            '''
-            if episode % 100 == 99:
-                x_layer.append(episode / 100)
-                y_layer.append(cost / 100)
-                print("Episode: {} cost: {}".format(episode, (cost / 100)))
-                cost = 0
-            '''
-            if episode % 100 == 99:
-                x_layer.append(episode / 100)
-                y_layer.append(cost / 100)
-                print("Episode: {} cost: {}".format(episode, (cost / 100)))
-                for _ in range(50):
-                    minibatch = rd.sample(replay_buffer, 100)
+
+            if episode % 50 == 49:
+                x_layer.append(episode / 50)
+                y_layer.append(cost / 50)
+                print("Episode: {} cost: {}".format(episode, (cost / 50)))
+                for _ in range(20):
+                    minibatch = rd.sample(replay_buffer, 2000)
                     loss, _ = replay_train(mainDQN, targetDQN, minibatch)
                 print("Loss: ", loss)
                 cost = 0
                 sess.run(copy_ops)
-        '''
-        state, file, user = env.reset()
-        for i in range(request):
-            action = np.argmax(mainDQN.predict(state))
-            print("action", action)
-            print(state)
-            print("user: ", user)
-            print("packet", file)
-            print("---------------------")
-            next_state, reward, done, file, user = env.step(action, file, user)
-            print(reward)
-            print(env.cost)
-            state = next_state
-        '''
-        W1 = mainDQN.Weight_1.eval()
-        W2 = mainDQN.Weight_2.eval()
-        W3 = mainDQN.Weight_3.eval()
-        W4 = mainDQN.Weight_4.eval()
-        W5 = mainDQN.Weight_5.eval()
-        np.save('Cache_W_1@', W1)
-        np.save('Cache_W_2@', W2)
-        np.save('Cache_W_3@', W3)
-        np.save('Cache_W_4@', W4)
-        np.save('Cache_W_5@', W5)
+            '''
+            if episode % 5 == 4:
+                x_layer.append(episode / 5)
+                y_layer.append(cost / 5)
+                print("Episode: {} cost: {}".format(episode, (cost / 5)))
+                cost = 0
+            '''
+        mainDQN.save()
 
-    np.save("X_", x_layer)
-    np.save("Y_", y_layer)
+    print("start_time", start_time)
+    print("--- %s seconds ---" % (time.time() - start_time))
+
+    np.save("X_(ex)", x_layer)
+    np.save("Y_(ex)", y_layer)
     plt.plot(x_layer, y_layer)
     plt.show()
 
-if __name__ =="__main__":
+
+if __name__ == "__main__":
     main()
