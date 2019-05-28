@@ -26,8 +26,6 @@ class cache_replacement:
         self.Small_BS = 5 #Small->Macro cost
         self.count = 0 #패킷 리퀘스트 카운트
         self.cost = 0 #1episode 당 cost
-        self.win_reward = 10 #좋은 리워드
-        self.loss_reward = -10 #나쁜 리워드
         self.point = 10 #state 설정값
         self.Zip_law = [] #zip 분포
         self.Setting = tuple(range(0, self.F_packet, self.Num_packet)) #zip 분포 파일
@@ -38,8 +36,10 @@ class cache_replacement:
         self.Zip_law = (np.array(range(1, self.Num_file+1))**(-self.alpha)) / m
 
     def reset(self): #reset
-        self.BS = np.zeros([4, self.Memory], dtype=int)
         self.BS[range(4)] = range(self.Memory)
+        self.state = np.zeros([4, self.F_packet])
+        for i in range(4):
+            self.state[i][self.BS[i]] = self.point
         self.user_location = np.random.uniform(-100, 100, (1, 2))[0]
         self.cost = 0
         self.count = 0
@@ -59,7 +59,8 @@ class cache_replacement:
         return np.sqrt(np.sum((x - y)**2))
 
     def random_action(self):
-        return rd.randrange(0, 4 * self.Memory)
+        aa = rd.randrange(4)
+        return aa * self.F_packet + np.random.choice(np.where(self.state[aa] == self.point)[0])
 
     def Probabilistic(self, d):
         prob = 1.0 - np.exp(-1 * ((2**self.Transmit_Rate - 1)*d**4) / self.Transmission_Power)
@@ -70,28 +71,29 @@ class cache_replacement:
         reward = 0
         done = False
         for i in range(4):
-            if action // 4 == i:
+            if action // self.F_packet == i:
+                action_1 = action % self.F_packet
                 d = cache_replacement.Distance(self, self.BS_Location[i], user)
-                if file not in self.BS[i]:
-                    self.BS[i][action % 4] = -1
+                if self.state[i][file] == 0:
+                    self.state[i][action_1] = 0
                     while np.random.rand(1) < self.M_S_error:
                         cost += self.Macro_BS
-                        reward -= self.Macro_BS
+                        reward -= self.Macro_BS * 5
                     cost += self.Macro_BS
-                    reward -= self.Macro_BS
-                    self.BS[i][action % 4] = file
+                    reward -= self.Macro_BS * 5
+                    self.state[i][file] = self.point
                     while cache_replacement.error_rate(self, d) == 0:
                         cost += self.Small_BS
-                        reward -= self.Small_BS
+                        reward -= self.Small_BS * 5
                     cost += self.Small_BS
-                    reward -= self.Small_BS
+                    reward -= self.Small_BS * 5
                     self.count += 1
                 else:
                     while cache_replacement.error_rate(self, d) == 0:
                         cost += self.Small_BS
-                        reward -= self.Small_BS
+                        reward -= self.Small_BS * 5
                     cost += self.Small_BS
-                    reward -= self.Small_BS
+                    reward -= self.Small_BS * 5
                     self.count += 1
 
         if self.count % self.Num_packet == 0:
@@ -115,6 +117,17 @@ class cache_replacement:
         for i in range(4):
             d[i] = np.array(cache_replacement.Distance(self, self.BS_Location[i], user))
             prob[i] = np.array(cache_replacement.Probabilistic(self, d[i]))
-        result = np.reshape(self.BS, [1, 4 * self.Memory])
+        result = np.reshape(self.state, [1, 4 * self.F_packet])
         result = np.hstack([prob, result[0]])
         return result
+
+    def Q_fun(self, Q):
+        result = np.reshape(self.state, [1, 4 * self.F_packet])
+        Q[np.where(result[0] == 0)[0]] = -1000
+        return Q
+
+    def print(self):
+        print(np.where(self.state[0] == self.point)[0])
+        print(np.where(self.state[1] == self.point)[0])
+        print(np.where(self.state[2] == self.point)[0])
+        print(np.where(self.state[3] == self.point)[0])
