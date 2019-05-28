@@ -10,9 +10,9 @@ start_time = time.time()
 
 env = cache.cache_replacement()
 
-input_size = env.Memory * 4 + 5
-output_size = 4 * env.Memory
-dis = .9999999
+input_size = env.F_packet * 4 + 5
+output_size = 4 * env.F_packet
+dis = .999999999
 request = 200
 REPLAY_MEMORY = 1000000
 x_layer = []
@@ -68,11 +68,11 @@ def main():
             file = env.file_request[0]
             user = env.user_location
             for i in range(request * env.Num_packet):
-                print("-------------------")
-                print("NOW:", env.BS)
-                print("file:", file)
-                print("user:", user)
-                print("state:", state)
+                # print("-------------------")
+                # env.print()
+                # print("file:", file)
+                # print("user:", user)
+                # print("state:", state)
                 '''
                 action = 0
                 aa = np.ones([4]) * 1000
@@ -93,17 +93,19 @@ def main():
                     action = 8 + np.argmax(env.BS[2])
                 if bb == 3:
                     action = 12 + np.argmax(env.BS[3])
-                
+                '''
                 if np.random.rand(1) < e:
                     action = env.random_action()
                 else:
-                    action = np.argmax(mainDQN.predict(state)[0])
-                '''
-                action = int(input("액션을 입력하시오:"))
-                print("action:", action)
+                    action = np.argmax(env.Q_fun(mainDQN.predict(state)[0]))
+
+                # action = int(input("액션을 입력하시오:"))
+                # print("action:", action)
 
                 next_state, reward, done, file, user = env.step(action, file, user)
-                print("reward:", reward)
+                # print("reward:", reward)
+                # print(env.count)
+                # print(env.cost)
 
                 replay_buffer.append((state, action, reward, next_state, done))
                 if len(replay_buffer) > REPLAY_MEMORY:
@@ -117,7 +119,7 @@ def main():
                 x_layer.append(episode / 50)
                 y_layer.append(cost / 50)
                 print("Episode: {} cost: {}".format(episode, (cost / 50)))
-                for _ in range(20):
+                for _ in range(25):
                     minibatch = rd.sample(replay_buffer, 2000)
                     loss, _ = replay_train(mainDQN, targetDQN, minibatch)
                 print("Loss: ", loss)
