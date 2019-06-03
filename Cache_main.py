@@ -12,9 +12,9 @@ env = cache.cache_replacement()
 
 input_size = env.F_packet * 4 + 5
 output_size = 4 * env.F_packet
-dis = .999999999
+dis = .91
 request = 200
-REPLAY_MEMORY = 1000000
+REPLAY_MEMORY = 5000000
 x_layer = []
 y_layer = []
 
@@ -50,7 +50,7 @@ def get_copy_var_ops(*, dest_scope_name="target", src_scope_name="main"):
 
 
 def main():
-    max_episodes = 20000
+    max_episodes = 50000
     replay_buffer = deque()
     cost = 0
     env.Zip_funtion()
@@ -63,7 +63,7 @@ def main():
         copy_ops = get_copy_var_ops(dest_scope_name="target", src_scope_name="main")
         sess.run(copy_ops)
         for episode in range(max_episodes):
-            e = 1. / ((episode // 1000) + 1)
+            e = 1. / ((episode // 1500) + 1)
             state = env.reset()
             file = env.file_request[0]
             user = env.user_location
@@ -98,6 +98,8 @@ def main():
                     action = env.random_action()
                 else:
                     action = np.argmax(env.Q_fun(mainDQN.predict(state)[0]))
+                    #if i % 200 == 0:
+                    #    print(env.Q_fun(mainDQN.predict(state)[0]))
 
                 # action = int(input("액션을 입력하시오:"))
                 # print("action:", action)
@@ -120,7 +122,7 @@ def main():
                 y_layer.append(cost / 50)
                 print("Episode: {} cost: {}".format(episode, (cost / 50)))
                 for _ in range(25):
-                    minibatch = rd.sample(replay_buffer, 2000)
+                    minibatch = rd.sample(replay_buffer, 1000)
                     loss, _ = replay_train(mainDQN, targetDQN, minibatch)
                 print("Loss: ", loss)
                 cost = 0
@@ -137,8 +139,8 @@ def main():
     print("start_time", start_time)
     print("--- %s seconds ---" % (time.time() - start_time))
 
-    np.save("X_(ex)", x_layer)
-    np.save("Y_(ex)", y_layer)
+    np.save("X_(act 91%)", x_layer)
+    np.save("Y_(act 91%)", y_layer)
     plt.plot(x_layer, y_layer)
     plt.show()
 
