@@ -78,22 +78,36 @@ class cache_replacement:
                     self.state[i][action_1] = 0
                     while np.random.rand(1) < self.M_S_error:
                         cost += self.Macro_BS
-                        reward -= self.Macro_BS * 5
+                        reward -= self.Macro_BS
                     cost += self.Macro_BS
-                    reward -= self.Macro_BS * 5
+                    reward -= self.Macro_BS
                     self.state[i][file] = self.point
                     while cache_replacement.error_rate(self, d) == 0:
                         cost += self.Small_BS
-                        reward -= self.Small_BS * 5
+                        reward -= self.Small_BS
                     cost += self.Small_BS
-                    reward -= self.Small_BS * 5
+                    reward -= self.Small_BS
                     self.count += 1
-                else:
+                elif self.state[i][file] == self.point:
                     while cache_replacement.error_rate(self, d) == 0:
                         cost += self.Small_BS
-                        reward -= self.Small_BS * 5
+                        reward -= self.Small_BS
                     cost += self.Small_BS
-                    reward -= self.Small_BS * 5
+                    reward -= self.Macro_BS
+                    self.count += 1
+                elif self.state[i][action_1] == 0:
+                    print("error")
+                else:
+                    while np.random.rand(1) < self.M_S_error:
+                        cost += self.Macro_BS
+                        reward -= self.Macro_BS
+                    cost += self.Macro_BS
+                    reward -= self.Macro_BS
+                    while cache_replacement.error_rate(self, d) == 0:
+                        cost += self.Small_BS
+                        reward -= self.Small_BS
+                    cost += self.Small_BS
+                    reward -= self.Small_BS
                     self.count += 1
 
         if self.count % self.Num_packet == 0:
@@ -123,7 +137,7 @@ class cache_replacement:
 
     def Q_fun(self, Q):
         result = np.reshape(self.state, [1, 4 * self.F_packet])
-        Q[np.where(result[0] == 0)[0]] = -1000
+        Q[np.where(result[0] == 0)[0]] = -100000000000000000000
         return Q
 
     def print(self):
