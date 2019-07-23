@@ -1,168 +1,134 @@
 import tensorflow as tf
 import numpy as np
-import random as rd
-import Cache_env as cache
-import Cache_DQN as DQN
-from collections import deque
-import matplotlib.pyplot as plt
-import time
-start_time = time.time()
+import Cache_env as Cache
 
-env = cache.cache_replacement()
+env = Cache.cache_replacement()
 
-input_size = env.F_packet * 4 + 5
-output_size = 4 * env.F_packet
-dis = 1
-request = 200
-REPLAY_MEMORY = 50000000
-y_layer = []
-
-
-def replay_train(mainDQN, targetDQN, train_batch):
-    x_stack = np.empty(0).reshape(0, input_size)
-    y_stack = np.empty(0).reshape(0, output_size)
-
-    for state, action, reward, next_state, done in train_batch:
-        Q = mainDQN.predict(state)
-
-        if done:
-            Q[0, action] = reward
-        else:
-            Q[0, action] = reward + dis * np.max(targetDQN.predict(next_state))
-
-        y_stack = np.vstack([y_stack, Q])
-        x_stack = np.vstack([x_stack, state])
-
-    return mainDQN.update(x_stack, y_stack)
-
-
-def get_copy_var_ops(*, dest_scope_name="target", src_scope_name="main"):
-    op_holder = []
-
-    src_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=src_scope_name)
-    dest_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=dest_scope_name)
-
-    for src_var, dest_var in zip(src_vars, dest_vars):
-        op_holder.append(dest_var.assign(src_var.value()))
-
-    return op_holder
+class DQN:
+    def __init__(self, session, input_size, output_size, name="main"):
+        self.session = session
+        self.input_size = input_size
+        self.output_size = output_size
+        self.net_name = name
+        self.dropout_rate = tf.placeholder("float")
+        self.W_1 = []
+        self.W_2 = []
+        self.W_3 = []
+        self.W_4 = []
+        self.W_5 = []
+        self.W_6 = []
+        self.W_7 = []
+        self.W_8 = []
+        self.W_9 = []
+        self.W_10 = []
+        self.W_11 = []
+        self.B_1 = []
+        self.B_2 = []
+        self.B_3 = []
+        self.B_4 = []
+        self.B_5 = []
+        self.B_6 = []
+        self.B_7 = []
+        self.B_8 = []
+        self.B_9 = []
+        self.B_10 = []
+        self.B_11 = []
 
 
-def main():
-    max_episodes = 30000
-    replay_buffer = deque()
-    cost = 0
-    env.Zip_funtion()
+        self._build_network()
 
-    with tf.Session() as sess:
-        mainDQN = DQN.DQN(sess, input_size, output_size, name="main")
-        targetDQN = DQN.DQN(sess, input_size, output_size, name="target")
-        tf.global_variables_initializer().run()
+    def _build_network(self, h_size=229, l_rate=0.001):
+        with tf.variable_scope(self.net_name):
+            self._X = tf.placeholder(tf.float32, [None, self.input_size], name="input_x")
 
-        copy_ops = get_copy_var_ops(dest_scope_name="target", src_scope_name="main")
-        sess.run(copy_ops)
-        for episode in range(max_episodes):
-            e = np.maximum(1. / ((episode // 4000) + 1), 1/11.0)
-            state = env.reset()
-            file = env.file_request[0]
-            user = env.user_location
-            for i in range(request * env.Num_packet):
-                # print("-------------------")
-                # env.print()
-                # print("file:", file)
-                # print("user:", user)
-                # print("dsfsaf", env.state)
-                # print(np.argmax(env.Q_fun(mainDQN.predict(state)[0])))
-                # print(env.Q_fun(mainDQN.predict(state)[0]))
-                # print("state:", state)
-                '''
-                action = 0
-                aa = np.ones([4]) * 1000
-                if file in env.BS[0]:
-                    aa[0] = env.Distance(env.BS_0, user)
-                if file in env.BS[1]:
-                    aa[1] = env.Distance(env.BS_1, user)
-                if file in env.BS[2]:
-                    aa[2] = env.Distance(env.BS_2, user)
-                if file in env.BS[3]:
-                    aa[3] = env.Distance(env.BS_3, user)
-                bb = np.argmin(aa)
-                if bb == 0:
-                    action = np.argmax(env.BS[0])
-                if bb == 1:
-                    action = 4 + np.argmax(env.BS[1])
-                if bb == 2:
-                    action = 8 + np.argmax(env.BS[2])
-                if bb == 3:
-                    action = 12 + np.argmax(env.BS[3])
-                '''
-                if np.random.rand(1) < e:
-                    action = env.random_action()
-                else:
-                    action = np.argmax(env.Q_fun(mainDQN.predict(state)[0]))
-                    #if i % 200 == 0:
-                    #    print(env.Q_fun(mainDQN.predict(state)[0]))
+            W1 = tf.get_variable("W1", shape=[self.input_size, h_size],
+                                 initializer=tf.contrib.layers.xavier_initializer())
+            b1 = tf.Variable(tf.random_normal([h_size]))
+            layer1 = tf.nn.leaky_relu(tf.matmul(self._X, W1)+b1)
+            layer1 = tf.nn.dropout(layer1, rate=self.dropout_rate)
+            W2 = tf.get_variable("W2", shape=[h_size, h_size],
+                                 initializer=tf.contrib.layers.xavier_initializer())
+            b2 = tf.Variable(tf.random_normal([h_size]))
+            layer2 = tf.nn.leaky_relu(tf.matmul(layer1, W2)+b2)
+            layer2 = tf.nn.dropout(layer2, rate=self.dropout_rate)
+            W3 = tf.get_variable("W3", shape=[h_size, h_size],
+                                 initializer=tf.contrib.layers.xavier_initializer())
+            b3 = tf.Variable(tf.random_normal([h_size]))
+            layer3 = tf.nn.leaky_relu(tf.matmul(layer2, W3)+b3)
+            layer3 = tf.nn.dropout(layer3, rate=self.dropout_rate)
+            W4 = tf.get_variable("W4", shape=[h_size, h_size],
+                                 initializer=tf.contrib.layers.xavier_initializer())
+            b4 = tf.Variable(tf.random_normal([h_size]))
+            layer4 = tf.nn.leaky_relu(tf.matmul(layer3, W4)+b4)
+            layer4 = tf.nn.dropout(layer4, rate=self.dropout_rate)
+            W5 = tf.get_variable("W5", shape=[h_size, h_size],
+                                 initializer=tf.contrib.layers.xavier_initializer())
+            b5 = tf.Variable(tf.random_normal([h_size]))
+            layer5 = tf.nn.leaky_relu(tf.matmul(layer4, W5)+b5)
+            layer5 = tf.nn.dropout(layer5, rate=self.dropout_rate)
+            W6 = tf.get_variable("W6", shape=[h_size, h_size],
+                                 initializer=tf.contrib.layers.xavier_initializer())
+            b6 = tf.Variable(tf.random_normal([h_size]))
+            layer6 = tf.nn.leaky_relu(tf.matmul(layer5, W6) + b6)
+            layer6 = tf.nn.dropout(layer6, rate=self.dropout_rate)
+            W7 = tf.get_variable("W7", shape=[h_size, h_size],
+                                 initializer=tf.contrib.layers.xavier_initializer())
+            b7 = tf.Variable(tf.random_normal([h_size]))
+            layer7 = tf.nn.leaky_relu(tf.matmul(layer6, W7) + b7)
+            layer7 = tf.nn.dropout(layer7, rate=self.dropout_rate)
+            W8 = tf.get_variable("W8", shape=[h_size, h_size],
+                                 initializer=tf.contrib.layers.xavier_initializer())
+            b8 = tf.Variable(tf.random_normal([h_size]))
+            layer8 = tf.nn.leaky_relu(tf.matmul(layer7, W8) + b8)
+            layer8 = tf.nn.dropout(layer8, rate=self.dropout_rate)
+            W9 = tf.get_variable("W9", shape=[h_size, h_size],
+                                 initializer=tf.contrib.layers.xavier_initializer())
+            b9 = tf.Variable(tf.random_normal([h_size]))
+            layer9 = tf.nn.leaky_relu(tf.matmul(layer8, W9) + b9)
+            layer9 = tf.nn.dropout(layer9, rate=self.dropout_rate)
+            W10 = tf.get_variable("W10", shape=[h_size, h_size],
+                                  initializer=tf.contrib.layers.xavier_initializer())
+            b10 = tf.Variable(tf.random_normal([h_size]))
+            layer10 = tf.nn.leaky_relu(tf.matmul(layer9, W10) + b10)
+            layer10 = tf.nn.dropout(layer10, rate=self.dropout_rate)
+            W11 = tf.get_variable("W11", shape=[h_size, self.output_size],
+                                  initializer=tf.contrib.layers.xavier_initializer())
+            b11 = tf.Variable(tf.random_normal([self.output_size]))
 
-                # action = int(input("액션을 입력하시오:"))
-                # print("action:", action)
+            self._Qpred = tf.matmul(layer10, W11) + b11
 
-                next_state, reward, done, file, user = env.step(action, file, user)
-                # print("reward:", reward)
-                # print(env.count)
-                # print(env.cost)
+        self._Y = tf.placeholder(shape=[None, self.output_size], dtype=tf.float32)
+        self._loss = tf.reduce_mean(tf.square(self._Y - self._Qpred))
+        self._train = tf.train.AdamOptimizer(learning_rate=l_rate).minimize(self._loss)
 
-                replay_buffer.append((state, action, reward, next_state, done))
-                if len(replay_buffer) > REPLAY_MEMORY:
-                    replay_buffer.popleft()
-
-                state = next_state
-
-            cost += env.cost
-
-            if episode % 50 == 49:
-                y_layer.append(cost / 50)
-                print("Episode: {} cost: {}".format(episode, (cost / 50)))
-                for _ in range(20):
-                    minibatch = rd.sample(replay_buffer, 2000)
-                    loss, _ = replay_train(mainDQN, targetDQN, minibatch)
-                print("Loss: ", loss)
-                cost = 0
-                sess.run(copy_ops)
-            '''
-            if episode % 5 == 4:
-                y_layer.append(cost / 5)
-                print("Episode: {} cost: {}".format(episode, (cost / 5)))
-                cost = 0
-            '''
-        np.save('Cache_W_1', mainDQN.W_1.eval())
-        np.save('Cache_W_2', mainDQN.W_2.eval())
-        np.save('Cache_W_3', mainDQN.W_3.eval())
-        np.save('Cache_W_4', mainDQN.W_4.eval())
-        np.save('Cache_W_5', mainDQN.W_5.eval())
-        np.save('Cache_W_6', mainDQN.W_6.eval())
-        np.save('Cache_W_7', mainDQN.W_7.eval())
-        np.save('Cache_W_8', mainDQN.W_8.eval())
-        np.save('Cache_W_9', mainDQN.W_9.eval())
-        np.save('Cache_W_10', mainDQN.W_10.eval())
-        np.save('Cache_W_11', mainDQN.W_11.eval())
-        np.save('B_1', mainDQN.B_1.eval())
-        np.save('B_2', mainDQN.B_2.eval())
-        np.save('B_3', mainDQN.B_3.eval())
-        np.save('B_4', mainDQN.B_4.eval())
-        np.save('B_5', mainDQN.B_5.eval())
-        np.save('B_6', mainDQN.B_6.eval())
-        np.save('B_7', mainDQN.B_7.eval())
-        np.save('B_8', mainDQN.B_8.eval())
-        np.save('B_9', mainDQN.B_9.eval())
-        np.save('B_10', mainDQN.B_10.eval())
-        np.save('B_11', mainDQN.B_11.eval())
+        self.W_1 = W1
+        self.W_2 = W2
+        self.W_3 = W3
+        self.W_4 = W4
+        self.W_5 = W5
+        self.W_6 = W6
+        self.W_7 = W7
+        self.W_8 = W8
+        self.W_9 = W9
+        self.W_10 = W10
+        self.W_11 = W11
+        self.B_1 = b1
+        self.B_2 = b2
+        self.B_3 = b3
+        self.B_4 = b4
+        self.B_5 = b5
+        self.B_6 = b6
+        self.B_7 = b7
+        self.B_8 = b8
+        self.B_9 = b9
+        self.B_10 = b10
+        self.B_11 = b11
 
 
+    def predict(self, state):
+        x = np.reshape(state, [1, self.input_size])
+        return self.session.run(self._Qpred, feed_dict={self._X: x, self.dropout_rate: 0})
 
-    print("start_time", start_time)
-    print("--- %s seconds ---" % (time.time() - start_time))
-
-    np.save("Y_(act %)", y_layer)
-
-if __name__ == "__main__":
-    main()
+    def update(self, x_stack, y_stack):
+        return self.session.run([self._loss, self._train],
+                                feed_dict={self._X: x_stack, self._Y: y_stack, self.dropout_rate: 0})
