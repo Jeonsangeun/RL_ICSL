@@ -4,7 +4,6 @@ import Cache_env as Cache
 
 env = Cache.cache_replacement()
 
-
 class DQN:
     def __init__(self, session, input_size, output_size, name="main"):
         self.session = session
@@ -12,10 +11,33 @@ class DQN:
         self.output_size = output_size
         self.net_name = name
         self.dropout_rate = tf.placeholder("float")
+        self.W_1 = []
+        self.W_2 = []
+        self.W_3 = []
+        self.W_4 = []
+        self.W_5 = []
+        self.W_6 = []
+        self.W_7 = []
+        self.W_8 = []
+        self.W_9 = []
+        self.W_10 = []
+        self.W_11 = []
+        self.B_1 = []
+        self.B_2 = []
+        self.B_3 = []
+        self.B_4 = []
+        self.B_5 = []
+        self.B_6 = []
+        self.B_7 = []
+        self.B_8 = []
+        self.B_9 = []
+        self.B_10 = []
+        self.B_11 = []
+
 
         self._build_network()
 
-    def _build_network(self, h_size=300, l_rate=0.001):
+    def _build_network(self, h_size=229, l_rate=0.001):
         with tf.variable_scope(self.net_name):
             self._X = tf.placeholder(tf.float32, [None, self.input_size], name="input_x")
 
@@ -79,6 +101,30 @@ class DQN:
         self._loss = tf.reduce_mean(tf.square(self._Y - self._Qpred))
         self._train = tf.train.AdamOptimizer(learning_rate=l_rate).minimize(self._loss)
 
+        self.W_1 = W1
+        self.W_2 = W2
+        self.W_3 = W3
+        self.W_4 = W4
+        self.W_5 = W5
+        self.W_6 = W6
+        self.W_7 = W7
+        self.W_8 = W8
+        self.W_9 = W9
+        self.W_10 = W10
+        self.W_11 = W11
+        self.B_1 = b1
+        self.B_2 = b2
+        self.B_3 = b3
+        self.B_4 = b4
+        self.B_5 = b5
+        self.B_6 = b6
+        self.B_7 = b7
+        self.B_8 = b8
+        self.B_9 = b9
+        self.B_10 = b10
+        self.B_11 = b11
+
+
     def predict(self, state):
         x = np.reshape(state, [1, self.input_size])
         return self.session.run(self._Qpred, feed_dict={self._X: x, self.dropout_rate: 0})
@@ -86,7 +132,3 @@ class DQN:
     def update(self, x_stack, y_stack):
         return self.session.run([self._loss, self._train],
                                 feed_dict={self._X: x_stack, self._Y: y_stack, self.dropout_rate: 0})
-    def save(self):
-        saver = tf.train.Saver()
-        sess = self.session
-        saver.save(sess, 'my_model_d')
